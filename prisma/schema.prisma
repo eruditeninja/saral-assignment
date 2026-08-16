@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Job {
+  id        String   @id @default(uuid()) @db.Uuid
+  jobType   String   @map("job_type")
+  jobValue  String   @map("job_value")
+  fileName  String   @map("file_name")
+  payload   Json
+  active    Boolean  @default(true)
+  nextRunAt DateTime @map("next_run_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  jobRuns JobRun[]
+
+  @@map("jobs")
+}
+
+model JobRun {
+  id              String   @id @default(uuid()) @db.Uuid
+  jobId           String   @map("job_id") @db.Uuid
+  nextRunAt       DateTime @map("next_run_at")
+  payload         Json
+  relayStatus     String   @default("PENDING") @map("relay_status")
+  relayRetryCount Int      @default(0) @map("relay_retry_count")
+  sentAt          DateTime? @map("sent_at")
+  status          String   @default("QUEUED")
+  errorMessage    String?  @map("error_message")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@unique([jobId, nextRunAt])
+  @@map("job_runs")
+}
+
+model Media {
+  hashtagName   String   @map("hashtag_name")
+  mediaId       String   @map("media_id")
+  mediaType     String   @map("media_type")
+  timestamp     DateTime
+  permalink     String
+  caption       String?
+  likeCount     Int?     @map("like_count")
+  commentsCount Int      @map("comments_count")
+  syncType      String   @map("sync_type")
+  syncedAt      DateTime @updatedAt @map("synced_at")
+  sourceUrl     String?  @map("source_url")
+  mediaUrl      String?  @map("media_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@id([hashtagName, mediaId])
+  @@map("media")
+}
